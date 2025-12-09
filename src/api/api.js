@@ -67,6 +67,10 @@ export const registerUser = async (userData) => {
   return await api.post('/users', userData);
 };
 
+export const updateUser = async (email, userData) => {
+  return await api.put(`/users/${email}`, userData);
+};
+
 export const loginUser = async (email) => {
   return await api.get(`/users/${email}`);
 };
@@ -82,6 +86,10 @@ export const getGuestsByUser = async (userEmail) => {
 
 export const createGuest = async (guestData) => {
   return await api.post('/guests', guestData);
+};
+
+export const updateGuest = async (guestName, guestNumber, updateData) => {
+  return await api.put(`/guests/${encodeURIComponent(guestName)}/${encodeURIComponent(guestNumber)}`, updateData);
 };
 
 // Item APIs
@@ -111,6 +119,39 @@ export const createItem = async (itemData) => {
 
 export const deleteItem = async (itemName) => {
   return await api.delete(`/items/${itemName}`);
+};
+
+// Guest-Item Claim APIs
+export const getAllClaims = async () => {
+  return await api.get('/claims');
+};
+
+export const getClaimsByGuest = async (guestName, guestNumber) => {
+  return await api.get(`/claims/guest/${encodeURIComponent(guestName)}/${encodeURIComponent(guestNumber)}`);
+};
+
+export const getClaimsByItem = async (itemName) => {
+  return await api.get(`/claims/item/${encodeURIComponent(itemName)}`);
+};
+
+export const createClaim = async (claimData) => {
+  return await api.post('/claims', claimData);
+};
+
+export const updateClaim = async (guestName, guestNumber, itemName, updateData) => {
+  return await api.put(`/claims/${encodeURIComponent(guestName)}/${encodeURIComponent(guestNumber)}/${encodeURIComponent(itemName)}`, updateData);
+};
+
+export const deleteClaim = async (guestName, guestNumber, itemName) => {
+  return await api.delete(`/claims/${encodeURIComponent(guestName)}/${encodeURIComponent(guestNumber)}/${encodeURIComponent(itemName)}`);
+};
+
+export const deleteClaimsByGuest = async (guestName, guestNumber) => {
+  return await api.delete(`/claims/guest/${encodeURIComponent(guestName)}/${encodeURIComponent(guestNumber)}`);
+};
+
+export const deleteClaimsByItem = async (itemName) => {
+  return await api.delete(`/claims/item/${encodeURIComponent(itemName)}`);
 };
 
 export default api;

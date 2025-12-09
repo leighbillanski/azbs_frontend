@@ -9,6 +9,7 @@ Both the login and registration screens now properly handle passwords for authen
 **Fields:**
 - **Email** (required, email format)
 - **Full Name** (required)
+- **Phone Number** (required)
 - **Password** (required, minimum 6 characters)
 
 **Behavior:**
@@ -21,6 +22,7 @@ Both the login and registration screens now properly handle passwords for authen
 {
   "email": "user@example.com",
   "name": "Full Name",
+  "number": "123-456-7890",
   "password": "securepass",
   "role": "user"
 }

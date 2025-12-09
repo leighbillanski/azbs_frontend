@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -14,12 +14,15 @@ const Navbar = () => {
   return (
     <nav className="navbar">
       <div className="navbar-container">
-        <Link to="/" className="navbar-logo">
+        <Link to="/home" className="navbar-logo">
           AZBS
         </Link>
         <div className="navbar-menu">
           {isAuthenticated ? (
             <>
+              <Link to="/home" className="navbar-link">
+                Home
+              </Link>
               <Link to="/rsvp" className="navbar-link">
                 RSVP
               </Link>
@@ -34,6 +37,9 @@ const Navbar = () => {
               </Link>
               <Link to="/banking" className="navbar-link">
                 Banking Details
+              </Link>
+              <Link to="/how-to-use" className="navbar-link">
+                Help
               </Link>
               <div className="navbar-user">
                 <Link to="/profile" className="navbar-link navbar-user-name">

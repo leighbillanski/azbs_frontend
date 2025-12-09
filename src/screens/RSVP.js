@@ -1,314 +1,342 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { getUnclaimedItems, claimItem } from '../api/api';
+import { getGuestsByUser, createGuest, updateGuest } from '../api/api';
 
 const RSVP = () => {
   const { user } = useAuth();
-  const [items, setItems] = useState([]);
+  const [guests, setGuests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [claimingFor, setClaimingFor] = useState('self'); // 'self' or 'guest'
-  const [guestData, setGuestData] = useState({
+  const [rsvpStatus, setRsvpStatus] = useState({}); // { guestKey: 'going' | 'not-going' }
+  const [showAddGuest, setShowAddGuest] = useState(false);
+  const [newGuestData, setNewGuestData] = useState({
     name: '',
     number: '',
   });
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    fetchItems();
+    fetchGuests();
   }, []);
 
-  const fetchItems = async () => {
+  const fetchGuests = async () => {
     setLoading(true);
     setError('');
     try {
-      const response = await getUnclaimedItems();
-      if (response && response.success) {
-        setItems(response.data || []);
+      const response = await getGuestsByUser(user.email);
+      if (response.success) {
+        const guestList = response.data || [];
+        setGuests(guestList);
+        
+        // Initialize RSVP status from backend data
+        const initialStatus = {};
+        guestList.forEach(guest => {
+          const key = `${guest.name}-${guest.number}`;
+          // Backend uses 'going' boolean field: true = going, false = not-going
+          initialStatus[key] = guest.going ? 'going' : 'not-going';
+          console.log(`Guest ${guest.name}: going = ${guest.going}, status = ${initialStatus[key]}`);
+        });
+        setRsvpStatus(initialStatus);
       } else {
-        setError('Failed to load items');
+        setError('Failed to load guests');
       }
     } catch (err) {
-      console.error('Error fetching items:', err);
-      setError('Failed to load items. Please try again.');
+      console.error('Error fetching guests:', err);
+      setError('Failed to load guests. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleItemSelect = (item) => {
-    setSelectedItem(item);
-    setError('');
-    setSuccess('');
-    // Reset form
-    setClaimingFor('self');
-    setGuestData({ name: '', number: '' });
+  const handleRsvpChange = async (guestName, guestNumber, status) => {
+    const key = `${guestName}-${guestNumber}`;
+    
+    console.log('=== RSVP UPDATE ===');
+    console.log('Guest Name:', guestName);
+    console.log('Guest Number:', guestNumber);
+    console.log('New Status:', status);
+    console.log('Encoded Name:', encodeURIComponent(guestName));
+    console.log('Encoded Number:', encodeURIComponent(guestNumber));
+    
+    // Optimistically update UI
+    setRsvpStatus(prev => ({
+      ...prev,
+      [key]: status
+    }));
+    
+    try {
+      // Backend expects 'going' boolean field: true = going, false = not-going
+      const updateData = {
+        going: status === 'going'
+      };
+      console.log('Update payload:', updateData);
+      
+      const response = await updateGuest(guestName, guestNumber, updateData);
+
+      console.log('Update guest response:', response);
+      console.log('Response type:', typeof response);
+      console.log('Response keys:', Object.keys(response || {}));
+
+      if (response.success) {
+        setSuccess(`Updated RSVP for ${guestName}: ${status === 'going' ? 'Going' : 'Not Going'}`);
+        setTimeout(() => setSuccess(''), 3000);
+      } else {
+        console.error('Update failed:', response);
+        // Revert on failure
+        setRsvpStatus(prev => ({
+          ...prev,
+          [key]: status === 'going' ? 'not-going' : 'going'
+        }));
+        setError(response?.error || 'Failed to update RSVP');
+      }
+    } catch (err) {
+      console.error('Error updating RSVP:', err);
+      console.error('Error response:', err.response);
+      // Revert on error
+      setRsvpStatus(prev => ({
+        ...prev,
+        [key]: status === 'going' ? 'not-going' : 'going'
+      }));
+      setError(err.response?.data?.error || 'Failed to update RSVP. Please try again.');
+    }
   };
 
-  const handleGuestDataChange = (e) => {
-    setGuestData({
-      ...guestData,
-      [e.target.name]: e.target.value,
+  const handleAddGuestClick = () => {
+    setShowAddGuest(true);
+    setError('');
+    setSuccess('');
+  };
+
+  const handleCancelAddGuest = () => {
+    setShowAddGuest(false);
+    setNewGuestData({ name: '', number: '' });
+    setError('');
+  };
+
+  const handleNewGuestChange = (e) => {
+    setNewGuestData({
+      ...newGuestData,
+      [e.target.name]: e.target.value
     });
   };
 
-  const handleSubmit = async (e) => {
+  const handleAddGuest = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
-
-    if (!selectedItem) {
-      setError('Please select an item to claim');
+    
+    if (!newGuestData.name.trim()) {
+      setError('Guest name is required');
+      return;
+    }
+    
+    if (!newGuestData.number.trim()) {
+      setError('Phone number is required');
       return;
     }
 
-    // Validate guest data if claiming for guest
-    if (claimingFor === 'guest') {
-      if (!guestData.name.trim()) {
-        setError('Guest name is required');
-        return;
-      }
-      if (!guestData.number.trim()) {
-        setError('Guest contact number is required');
-        return;
-      }
+    // Check if guest already exists
+    const existingGuest = guests.find(
+      g => g.name.toLowerCase() === newGuestData.name.trim().toLowerCase() || 
+           g.number === newGuestData.number.trim()
+    );
+    
+    if (existingGuest) {
+      setError(`A guest with this ${existingGuest.name.toLowerCase() === newGuestData.name.trim().toLowerCase() ? 'name' : 'number'} already exists.`);
+      return;
     }
 
     setSubmitting(true);
-
     try {
-      const claimData = claimingFor === 'self' 
-        ? {
-            name: user.name,
-            number: user.email, // Using email as identifier
-            userEmail: user.email,
-          }
-        : {
-            name: guestData.name,
-            number: guestData.number,
-            userEmail: user.email, // Track who added the guest
-          };
+      const response = await createGuest({
+        name: newGuestData.name.trim(),
+        number: newGuestData.number.trim(),
+        user_email: user.email
+      });
 
-      const response = await claimItem(selectedItem.item_name, claimData);
-      
-      if (response && response.success) {
-        setSuccess(`Successfully claimed "${selectedItem.item_name}" for ${claimingFor === 'self' ? 'yourself' : guestData.name}!`);
-        setSelectedItem(null);
-        setGuestData({ name: '', number: '' });
-        setClaimingFor('self');
-        // Refresh items list
-        fetchItems();
+      if (response.success) {
+        setSuccess(`Guest "${newGuestData.name}" added successfully!`);
+        setShowAddGuest(false);
+        setNewGuestData({ name: '', number: '' });
+        // Refresh guest list
+        fetchGuests();
       } else {
-        setError(response?.error || 'Failed to claim item');
+        setError(response?.error || 'Failed to add guest');
       }
     } catch (err) {
-      console.error('Error claiming item:', err);
-      setError('Failed to claim item. Please try again.');
+      console.error('Error adding guest:', err);
+      setError('Failed to add guest. Please try again.');
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleCancel = () => {
-    setSelectedItem(null);
-    setError('');
-    setSuccess('');
-    setGuestData({ name: '', number: '' });
-    setClaimingFor('self');
+  const getInitials = (name) => {
+    if (!name) return '?';
+    const parts = name.split(' ');
+    if (parts.length > 1) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
   };
+
+  const getStats = () => {
+    const totalGuests = guests.length;
+    const going = Object.values(rsvpStatus).filter(status => status === 'going').length;
+    const notGoing = Object.values(rsvpStatus).filter(status => status === 'not-going').length;
+    return { totalGuests, going, notGoing };
+  };
+
+  if (loading) return <div className="loading">Loading guests...</div>;
+
+  const stats = getStats();
 
   return (
     <div className="screen-container">
       <div className="rsvp-header">
-        <h1>RSVP & Claim Items</h1>
-        <p className="subtitle">Let us know you're coming and claim items you'd like to bring</p>
+        <h1>RSVP</h1>
+        <p className="subtitle">Manage your guest list and RSVPs</p>
       </div>
 
-      {success && (
-        <div className="success-message-banner">
-          ✓ {success}
+      {error && <div className="error-message">{error}</div>}
+      {success && <div className="success-message">{success}</div>}
+
+      {guests.length === 0 ? (
+        <div className="empty-state">
+          <span className="empty-icon">👥</span>
+          <h2>No Guests Yet</h2>
+          <p>Add guests to your list to manage RSVPs</p>
+          <button onClick={handleAddGuestClick} className="btn btn-primary">
+            Add Your First Guest
+          </button>
         </div>
-      )}
-
-      <div className="rsvp-container">
-        {/* Available Items Section */}
-        <div className="rsvp-items-section">
-          <h2>Available Items</h2>
-          {loading ? (
-            <div className="loading">Loading items...</div>
-          ) : items.length === 0 ? (
-            <div className="no-items-message">
-              <span className="no-items-icon">🎁</span>
-              <p>All items have been claimed! Thank you for your interest.</p>
+      ) : (
+        <>
+          <div className="rsvp-summary">
+            <div className="summary-stat">
+              <span className="stat-label">Total Guests</span>
+              <span className="stat-value">{stats.totalGuests}</span>
             </div>
-          ) : (
-            <div className="rsvp-items-grid">
-              {items.map((item) => (
-                <div 
-                  key={item.item_name} 
-                  className={`rsvp-item-card ${selectedItem?.item_name === item.item_name ? 'selected' : ''}`}
-                  onClick={() => handleItemSelect(item)}
-                >
-                  {item.item_photo && (
-                    <img 
-                      src={item.item_photo} 
-                      alt={item.item_name}
-                      className="rsvp-item-image"
-                    />
-                  )}
-                  <div className="rsvp-item-content">
-                    <h3>{item.item_name}</h3>
-                    {item.item_link && (
-                      <a 
-                        href={item.item_link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="item-link"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        View Details 🔗
-                      </a>
-                    )}
-                    <div className="item-quantity">
-                      Quantity needed: {item.item_count || 1}
-                    </div>
-                    {selectedItem?.item_name === item.item_name && (
-                      <div className="selected-badge">✓ Selected</div>
-                    )}
-                  </div>
-                </div>
-              ))}
+            <div className="summary-stat">
+              <span className="stat-label">Going</span>
+              <span className="stat-value stat-going">{stats.going}</span>
             </div>
-          )}
-        </div>
-
-        {/* Claim Form Section */}
-        {selectedItem && (
-          <div className="rsvp-claim-section">
-          <div className="rsvp-claim-card">
-          <h2>Claim "{selectedItem.item_name}"</h2>
-              
-              <form onSubmit={handleSubmit}>
-                {/* Claiming For Selection */}
-                <div className="claiming-for-section">
-                  <label className="section-label">Who are you claiming this for?</label>
-                  <div className="claiming-options">
-                    <label className={`claiming-option ${claimingFor === 'self' ? 'active' : ''}`}>
-                      <input
-                        type="radio"
-                        name="claimingFor"
-                        value="self"
-                        checked={claimingFor === 'self'}
-                        onChange={(e) => setClaimingFor(e.target.value)}
-                      />
-                      <div className="option-content">
-                        <span className="option-icon">👤</span>
-                        <div>
-                          <strong>Myself</strong>
-                          <p>I will bring this item</p>
-                        </div>
-                      </div>
-                    </label>
-
-                    <label className={`claiming-option ${claimingFor === 'guest' ? 'active' : ''}`}>
-                      <input
-                        type="radio"
-                        name="claimingFor"
-                        value="guest"
-                        checked={claimingFor === 'guest'}
-                        onChange={(e) => setClaimingFor(e.target.value)}
-                      />
-                      <div className="option-content">
-                        <span className="option-icon">👥</span>
-                        <div>
-                          <strong>A Guest</strong>
-                          <p>Someone else will bring this</p>
-                        </div>
-                      </div>
-                    </label>
-                  </div>
-                </div>
-
-                {/* Guest Information Form */}
-                {claimingFor === 'guest' && (
-                  <div className="guest-form-section">
-                    <h3>Guest Information</h3>
-                    <div className="form-group">
-                      <label htmlFor="guestName">Guest Name *</label>
-                      <input
-                        type="text"
-                        id="guestName"
-                        name="name"
-                        value={guestData.name}
-                        onChange={handleGuestDataChange}
-                        required
-                        placeholder="Enter guest's full name"
-                        className="form-input"
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="guestNumber">Contact Number *</label>
-                      <input
-                        type="text"
-                        id="guestNumber"
-                        name="number"
-                        value={guestData.number}
-                        onChange={handleGuestDataChange}
-                        required
-                        placeholder="Guest's phone or contact number"
-                        className="form-input"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* Confirmation Section */}
-                <div className="claim-summary">
-                  <h4>Summary</h4>
-                  <div className="summary-row">
-                    <span>Item:</span>
-                    <strong>{selectedItem.item_name}</strong>
-                  </div>
-                  <div className="summary-row">
-                    <span>Claimed by:</span>
-                    <strong>
-                      {claimingFor === 'self' 
-                        ? user.name 
-                        : guestData.name || 'Guest (enter details above)'}
-                    </strong>
-                  </div>
-                </div>
-
-                {error && <div className="error-message">{error}</div>}
-
-                <div className="form-actions">
-                  <button 
-                    type="submit" 
-                    className="btn btn-primary"
-                    disabled={submitting}
-                  >
-                    {submitting ? 'Claiming...' : '✓ Confirm Claim'}
-                  </button>
-                  <button 
-                    type="button" 
-                    className="btn btn-secondary"
-                    onClick={handleCancel}
-                    disabled={submitting}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
+            <div className="summary-stat">
+              <span className="stat-label">Not Going</span>
+              <span className="stat-value stat-not-going">{stats.notGoing}</span>
             </div>
           </div>
-        )}
-      </div>
+
+          <div className="rsvp-actions-bar">
+            <button onClick={handleAddGuestClick} className="btn btn-primary">
+              ➕ Add Guest
+            </button>
+          </div>
+
+          <div className="rsvp-guests-list">
+            {guests.map((guest) => {
+              const key = `${guest.name}-${guest.number}`;
+              const status = rsvpStatus[key] || 'not-going';
+              
+              return (
+                <div key={key} className="rsvp-guest-card">
+                  <div className="guest-info-section">
+                    <div className="guest-avatar-small">
+                      {getInitials(guest.name)}
+                    </div>
+                    <div className="guest-details">
+                      <h3>{guest.name}</h3>
+                      <p className="guest-number">📞 {guest.number}</p>
+                    </div>
+                  </div>
+
+                  <div className="rsvp-radio-group">
+                    <label className={`rsvp-radio-option ${status === 'going' ? 'active going' : ''}`}>
+                      <input
+                        type="radio"
+                        name={`rsvp-${key}`}
+                        value="going"
+                        checked={status === 'going'}
+                        onChange={() => handleRsvpChange(guest.name, guest.number, 'going')}
+                      />
+                      <span className="radio-label">✓ Going</span>
+                    </label>
+
+                    <label className={`rsvp-radio-option ${status === 'not-going' ? 'active not-going' : ''}`}>
+                      <input
+                        type="radio"
+                        name={`rsvp-${key}`}
+                        value="not-going"
+                        checked={status === 'not-going'}
+                        onChange={() => handleRsvpChange(guest.name, guest.number, 'not-going')}
+                      />
+                      <span className="radio-label">✕ Not Going</span>
+                    </label>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      {/* Add Guest Modal */}
+      {showAddGuest && (
+        <div className="modal-overlay" onClick={handleCancelAddGuest}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>Add New Guest</h2>
+            
+            <form onSubmit={handleAddGuest}>
+              <div className="form-group">
+                <label htmlFor="guestName">Guest Name *</label>
+                <input
+                  type="text"
+                  id="guestName"
+                  name="name"
+                  value={newGuestData.name}
+                  onChange={handleNewGuestChange}
+                  required
+                  placeholder="Enter guest's full name"
+                  className="form-input"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="guestNumber">Phone Number *</label>
+                <input
+                  type="tel"
+                  id="guestNumber"
+                  name="number"
+                  value={newGuestData.number}
+                  onChange={handleNewGuestChange}
+                  required
+                  placeholder="Enter guest's phone number"
+                  className="form-input"
+                />
+              </div>
+
+              <div className="form-actions">
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={submitting}
+                >
+                  {submitting ? 'Adding...' : 'Add Guest'}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={handleCancelAddGuest}
+                  disabled={submitting}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 export default RSVP;
-

@@ -1,16 +1,19 @@
-﻿import React from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
+import InactivityWarning from './components/InactivityWarning';
 import Login from './screens/Login';
 import Register from './screens/Register';
+import Home from './screens/Home';
 import ItemList from './screens/ItemList';
 import ClaimedItems from './screens/ClaimedItems';
 import BankingDetails from './screens/BankingDetails';
 import EventDetails from './screens/EventDetails';
 import Profile from './screens/Profile';
 import RSVP from './screens/RSVP';
+import HowToUse from './screens/HowToUse';
 import AdminTools from './screens/AdminTools';
 
 function App() {
@@ -19,10 +22,19 @@ function App() {
       <Router>
         <div className="App">
           <Navbar />
+          <InactivityWarning />
           <div className="main-content">
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route
+                path="/home"
+                element={
+                  <ProtectedRoute>
+                    <Home />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/items"
                 element={
@@ -72,6 +84,14 @@ function App() {
                 }
               />
               <Route
+                path="/how-to-use"
+                element={
+                  <ProtectedRoute>
+                    <HowToUse />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/admin"
                 element={
                   <ProtectedRoute>
@@ -79,7 +99,7 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-              <Route path="/" element={<Navigate to="/items" replace />} />
+              <Route path="/" element={<Navigate to="/home" replace />} />
             </Routes>
           </div>
         </div>

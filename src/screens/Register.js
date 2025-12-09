@@ -7,8 +7,9 @@ const Register = () => {
   const [formData, setFormData] = useState({
     email: '',
     name: '',
+    number: '',
     password: '',
-    role: 'user',
+    role: 'guest',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -110,6 +111,19 @@ const Register = () => {
               onChange={handleChange}
               required
               placeholder="Enter your name"
+              className="form-input"
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="number">Phone Number</label>
+            <input
+              type="tel"
+              id="number"
+              name="number"
+              value={formData.number}
+              onChange={handleChange}
+              required
+              placeholder="Enter your phone number"
               className="form-input"
             />
           </div>

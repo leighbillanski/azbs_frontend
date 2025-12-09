@@ -1,6 +1,6 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { getAllItems, claimItem } from '../api/api';
+import { getAllItems, claimItem, createGuest, getGuestsByUser } from '../api/api';
 
 const ItemList = () => {
   const [items, setItems] = useState([]);
@@ -9,20 +9,28 @@ const ItemList = () => {
   const [success, setSuccess] = useState('');
   const [selectedItems, setSelectedItems] = useState({}); // Object: { itemName: quantity }
   const [showClaimModal, setShowClaimModal] = useState(false);
-  const [claimingFor, setClaimingFor] = useState('self'); // 'self' or 'guest'
+  const [claimingFor, setClaimingFor] = useState('self'); // 'self', 'existing-guest', or 'new-guest'
+  const [existingGuests, setExistingGuests] = useState([]);
+  const [selectedGuest, setSelectedGuest] = useState('');
   const [guestData, setGuestData] = useState({ name: '', number: '' });
   const [submitting, setSubmitting] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => {
     fetchItems();
+    fetchExistingGuests();
   }, []);
 
   const fetchItems = async () => {
     try {
       const response = await getAllItems();
       if (response.success) {
-        setItems(response.data);
+        // Filter to only show items with available quantity > 0
+        const availableItems = response.data.filter(item => {
+          const available = getAvailableQuantity(item);
+          return available > 0;
+        });
+        setItems(availableItems);
       }
     } catch (err) {
       setError('Failed to load items');
@@ -30,6 +38,40 @@ const ItemList = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchExistingGuests = async () => {
+    try {
+      const response = await getGuestsByUser(user.email);
+      if (response.success) {
+        setExistingGuests(response.data || []);
+      }
+    } catch (err) {
+      console.error('Error fetching existing guests:', err);
+    }
+  };
+
+  const handleGuestSelection = (e) => {
+    const guestId = e.target.value;
+    setSelectedGuest(guestId);
+    
+    if (guestId) {
+      const guest = existingGuests.find(g => `${g.name}-${g.number}` === guestId);
+      if (guest) {
+        setGuestData({
+          name: guest.name,
+          number: guest.number
+        });
+      }
+    } else {
+      setGuestData({ name: '', number: '' });
+    }
+  };
+
+  // Helper function to get available quantity
+  const getAvailableQuantity = (item) => {
+    const claimedCount = item.claimed_count || 0;
+    return item.item_count - claimedCount;
   };
 
   const handleCheckboxChange = (itemName, maxQuantity) => {
@@ -87,7 +129,14 @@ const ItemList = () => {
     }
 
     // Validate guest data if claiming for guest
-    if (claimingFor === 'guest') {
+    if (claimingFor === 'existing-guest') {
+      if (!selectedGuest) {
+        setError('Please select a guest');
+        return;
+      }
+    }
+    
+    if (claimingFor === 'new-guest') {
       if (!guestData.name.trim()) {
         setError('Guest name is required');
         return;
@@ -96,19 +145,30 @@ const ItemList = () => {
         setError('Guest contact number is required');
         return;
       }
+      
+      // Check if guest already exists
+      const existingGuest = existingGuests.find(
+        g => g.name.toLowerCase() === guestData.name.trim().toLowerCase() || 
+             g.number === guestData.number.trim()
+      );
+      
+      if (existingGuest) {
+        setError(`A guest with this ${existingGuest.name.toLowerCase() === guestData.name.trim().toLowerCase() ? 'name' : 'number'} already exists. Please use "Existing Guest" option to select them.`);
+        return;
+      }
     }
 
     setSubmitting(true);
 
     const claimData = claimingFor === 'self' 
       ? {
-          name: user.name,
-          number: user.email, // Using email as identifier
+          guest_name: user.name,
+          guest_number: user.number || user.email, // Use user's number or email
           userEmail: user.email,
         }
       : {
-          name: guestData.name,
-          number: guestData.number,
+          guest_name: guestData.name,
+          guest_number: guestData.number,
           userEmail: user.email, // Track who added the guest
         };
 
@@ -117,6 +177,20 @@ const ItemList = () => {
     const failures = [];
     let totalItemsClaimed = 0;
 
+    // First, create/register the guest if needed
+    try {
+      await createGuest({
+        name: claimData.guest_name,
+        number: claimData.guest_number,
+        user_email: user.email,
+      });
+      console.log('Guest created/exists');
+    } catch (err) {
+      // Guest might already exist, that's okay
+      console.log('Guest creation note:', err.response?.data?.error || 'Guest may already exist');
+    }
+
+    // Now claim the items
     for (const [itemName, quantity] of Object.entries(selectedItems)) {
       try {
         // Create a claim data with quantity
@@ -141,13 +215,16 @@ const ItemList = () => {
 
     // Show results
     if (failures.length === 0) {
-      setSuccess(`Successfully claimed ${totalItemsClaimed} item(s) across ${results.length} product(s) for ${claimingFor === 'self' ? 'yourself' : guestData.name}!`);
+      const claimedForName = claimingFor === 'self' ? 'yourself' : guestData.name;
+      setSuccess(`Successfully claimed ${totalItemsClaimed} item(s) across ${results.length} product(s) for ${claimedForName}!`);
       setSelectedItems({});
       setShowClaimModal(false);
+      setSelectedGuest('');
       setGuestData({ name: '', number: '' });
       setClaimingFor('self');
-      // Refresh items list
+      // Refresh items list and guests
       fetchItems();
+      fetchExistingGuests();
     } else if (results.length === 0) {
       setError('Failed to claim any items. Please try again.');
     } else {
@@ -159,14 +236,16 @@ const ItemList = () => {
         failedItems[f.name] = f.quantity;
       });
       setSelectedItems(failedItems);
-      // Refresh items list
+      // Refresh items list and guests
       fetchItems();
+      fetchExistingGuests();
     }
   };
 
   const handleCancelClaim = () => {
     setShowClaimModal(false);
     setClaimingFor('self');
+    setSelectedGuest('');
     setGuestData({ name: '', number: '' });
     setError('');
     setSuccess('');
@@ -227,7 +306,7 @@ const ItemList = () => {
                   <input
                     type="checkbox"
                     checked={!!selectedItems[item.item_name]}
-                    onChange={() => handleCheckboxChange(item.item_name, item.item_count)}
+                    onChange={() => handleCheckboxChange(item.item_name, getAvailableQuantity(item))}
                     className="item-checkbox"
                   />
                 </div>
@@ -243,7 +322,7 @@ const ItemList = () => {
                 <div className="item-list-info">
                   <h3>{item.item_name}</h3>
                   <div className="item-meta">
-                    <span className="item-quantity">Available: {item.item_count || 1}</span>
+                    <span className="item-quantity">Available: {getAvailableQuantity(item)}</span>
                     {item.item_link && (
                       <a 
                         href={item.item_link}
@@ -265,13 +344,13 @@ const ItemList = () => {
                       id={`qty-${item.item_name}`}
                       type="number"
                       min="1"
-                      max={item.item_count || 1}
+                      max={getAvailableQuantity(item)}
                       value={selectedItems[item.item_name]}
-                      onChange={(e) => handleQuantityChange(item.item_name, e.target.value, item.item_count)}
+                      onChange={(e) => handleQuantityChange(item.item_name, e.target.value, getAvailableQuantity(item))}
                       className="quantity-input"
                       onClick={(e) => e.stopPropagation()}
                     />
-                    <span className="quantity-max">of {item.item_count}</span>
+                    <span className="quantity-max">of {getAvailableQuantity(item)}</span>
                   </div>
                 )}
               </div>
@@ -307,29 +386,72 @@ const ItemList = () => {
                     </div>
                   </label>
 
-                  <label className={`claiming-option ${claimingFor === 'guest' ? 'active' : ''}`}>
+                  {existingGuests.length > 0 && (
+                    <label className={`claiming-option ${claimingFor === 'existing-guest' ? 'active' : ''}`}>
+                      <input
+                        type="radio"
+                        name="claimingFor"
+                        value="existing-guest"
+                        checked={claimingFor === 'existing-guest'}
+                        onChange={(e) => setClaimingFor(e.target.value)}
+                      />
+                      <div className="option-content">
+                        <span className="option-icon">👥</span>
+                        <div>
+                          <strong>Existing Guest</strong>
+                          <p>Choose from your guests</p>
+                        </div>
+                      </div>
+                    </label>
+                  )}
+
+                  <label className={`claiming-option ${claimingFor === 'new-guest' ? 'active' : ''}`}>
                     <input
                       type="radio"
                       name="claimingFor"
-                      value="guest"
-                      checked={claimingFor === 'guest'}
+                      value="new-guest"
+                      checked={claimingFor === 'new-guest'}
                       onChange={(e) => setClaimingFor(e.target.value)}
                     />
                     <div className="option-content">
-                      <span className="option-icon">👥</span>
+                      <span className="option-icon">➕</span>
                       <div>
-                        <strong>A Guest</strong>
-                        <p>Someone else will bring these</p>
+                        <strong>New Guest</strong>
+                        <p>Add someone new</p>
                       </div>
                     </div>
                   </label>
                 </div>
               </div>
 
-              {/* Guest Information Form */}
-              {claimingFor === 'guest' && (
+              {/* Existing Guest Selection */}
+              {claimingFor === 'existing-guest' && (
                 <div className="guest-form-section">
-                  <h3>Guest Information</h3>
+                  <h3>Select Guest</h3>
+                  <div className="form-group">
+                    <label htmlFor="guestSelect">Choose Guest *</label>
+                    <select
+                      id="guestSelect"
+                      value={selectedGuest}
+                      onChange={handleGuestSelection}
+                      required
+                      className="form-input"
+                    >
+                      <option value="">-- Select a guest --</option>
+                      {existingGuests.map((guest) => (
+                        <option key={`${guest.name}-${guest.number}`} value={`${guest.name}-${guest.number}`}>
+                          {guest.name} ({guest.number})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {/* New Guest Information Form */}
+              {claimingFor === 'new-guest' && (
+                <div className="guest-form-section">
+                  <h3>New Guest Information</h3>
                   <div className="form-group">
                     <label htmlFor="guestName">Guest Name *</label>
                     <input

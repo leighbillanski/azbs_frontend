@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { registerUser } from '../api/api';
+import { updateUser } from '../api/api';
 
 const Profile = () => {
   const { user, login } = useAuth();
@@ -11,8 +11,9 @@ const Profile = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    number: '',
     password: '',
-    role: 'user',
+    role: 'guest',
   });
 
   useEffect(() => {
@@ -20,8 +21,9 @@ const Profile = () => {
       setFormData({
         name: user.name || '',
         email: user.email || '',
+        number: user.number || '',
         password: user.password || '',
-        role: user.role || 'user',
+        role: user.role || 'guest',
       });
     }
   }, [user]);
@@ -48,6 +50,10 @@ const Profile = () => {
       setError('Please enter a valid email address');
       return false;
     }
+    if (!formData.number.trim()) {
+      setError('Phone number is required');
+      return false;
+    }
     if (!formData.password.trim()) {
       setError('Password is required');
       return false;
@@ -71,9 +77,14 @@ const Profile = () => {
     setSuccess('');
 
     try {
-      // In production, this would be an update API call
-      // For now, we'll update via register endpoint
-      const response = await registerUser(formData);
+      console.log('=== PROFILE UPDATE ===');
+      console.log('User email:', user.email);
+      console.log('Update data:', formData);
+      
+      // Use the update endpoint with user's email
+      const response = await updateUser(user.email, formData);
+      
+      console.log('Update response:', response);
       
       if (response && response.success) {
         // Update the context with new user data
@@ -84,8 +95,19 @@ const Profile = () => {
         setError(response?.error || 'Failed to update profile');
       }
     } catch (err) {
-      console.error('Profile update error:', err);
-      setError('Failed to update profile. Please try again.');
+      console.error('=== PROFILE UPDATE ERROR ===');
+      console.error('Error:', err);
+      console.error('Error response:', err.response);
+      console.error('Error data:', err.response?.data);
+      console.error('Error status:', err.response?.status);
+      
+      if (err.response?.data?.error) {
+        setError(err.response.data.error);
+      } else if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else {
+        setError('Failed to update profile. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -158,6 +180,11 @@ const Profile = () => {
                 </div>
 
                 <div className="profile-detail-item">
+                  <label>Phone Number</label>
+                  <p>{user?.number || 'Not provided'}</p>
+                </div>
+
+                <div className="profile-detail-item">
                   <label>Account Type</label>
                   <p style={{ textTransform: 'capitalize' }}>{user?.role || 'User'}</p>
                 </div>
@@ -198,6 +225,20 @@ const Profile = () => {
                     onChange={handleChange}
                     required
                     placeholder="Enter your email"
+                    className="form-input"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="number">Phone Number *</label>
+                  <input
+                    type="tel"
+                    id="number"
+                    name="number"
+                    value={formData.number}
+                    onChange={handleChange}
+                    required
+                    placeholder="Enter your phone number"
                     className="form-input"
                   />
                 </div>
