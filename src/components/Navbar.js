@@ -20,14 +20,25 @@ const Navbar = () => {
         <div className="navbar-menu">
           {isAuthenticated ? (
             <>
+              <Link to="/rsvp" className="navbar-link">
+                RSVP
+              </Link>
               <Link to="/items" className="navbar-link">
                 Items
               </Link>
               <Link to="/claimed" className="navbar-link">
                 Claimed Items
               </Link>
+              <Link to="/event" className="navbar-link">
+                Event Details
+              </Link>
+              <Link to="/banking" className="navbar-link">
+                Banking Details
+              </Link>
               <div className="navbar-user">
-                <span>{user?.name || user?.email}</span>
+                <Link to="/profile" className="navbar-link navbar-user-name">
+                  {user?.name || user?.email}
+                </Link>
                 <button onClick={handleLogout} className="btn btn-logout">
                   Logout
                 </button>

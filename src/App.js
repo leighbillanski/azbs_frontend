@@ -7,6 +7,11 @@ import Login from './screens/Login';
 import Register from './screens/Register';
 import ItemList from './screens/ItemList';
 import ClaimedItems from './screens/ClaimedItems';
+import BankingDetails from './screens/BankingDetails';
+import EventDetails from './screens/EventDetails';
+import Profile from './screens/Profile';
+import RSVP from './screens/RSVP';
+import AdminTools from './screens/AdminTools';
 
 function App() {
   return (
@@ -31,6 +36,46 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <ClaimedItems />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/banking"
+                element={
+                  <ProtectedRoute>
+                    <BankingDetails />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/event"
+                element={
+                  <ProtectedRoute>
+                    <EventDetails />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/rsvp"
+                element={
+                  <ProtectedRoute>
+                    <RSVP />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute>
+                    <AdminTools />
                   </ProtectedRoute>
                 }
               />
