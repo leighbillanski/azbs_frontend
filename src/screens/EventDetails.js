@@ -18,9 +18,6 @@ const EventDetails = () => {
       <div className="event-header">
         <h1>Angelique and Zaadrick's Baby Shower</h1>
         <p className="subtitle">Join us to celebrate the arrival of our little princess!</p>
-        <div className="event-gender-announcement">
-          <span className="gender-badge-large">It's a Girl! 👧💗</span>
-        </div>
       </div>
 
       <div className="event-container">
@@ -28,7 +25,7 @@ const EventDetails = () => {
         <div className="event-info-card">
           <div className="event-icon-section">
             <div className="event-icon">👶💗</div>
-            <h2>Baby Girl Shower Celebration</h2>
+            <h2>Baby Shower Celebration</h2>
           </div>
 
           <div className="event-details-grid">

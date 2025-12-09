@@ -19,9 +19,6 @@ const Home = () => {
           <span className="home-icon">👶💗</span>
           <h1 className="home-title">Angelique and Zaadrick's Baby Shower</h1>
           <p className="home-subtitle">Join us in celebrating our little princess!</p>
-          <div className="home-baby-gender">
-            <span className="gender-badge">It's a Girl! 👧</span>
-          </div>
           <div className="home-greeting">
             <p>Welcome back, <strong>{getFirstName()}</strong>! 👋</p>
           </div>
@@ -90,9 +87,9 @@ const Home = () => {
 
       <div className="home-footer-note">
         <div className="footer-note-content">
-          <span className="footer-note-icon">💝👧💗</span>
+          <span className="footer-note-icon">💝👶💗</span>
           <p>Thank you for being part of our special celebration!</p>
-          <p className="footer-note-subtitle">We can't wait to welcome our baby girl with you there</p>
+          <p className="footer-note-subtitle">We can't wait to see you there</p>
         </div>
       </div>
     </div>
