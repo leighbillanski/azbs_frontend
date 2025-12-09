@@ -16,19 +16,6 @@ const Register = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const testConnection = async () => {
-    console.log('Testing backend connection...');
-    try {
-      const response = await fetch('https://azbs-backend.onrender.com/api/users');
-      const data = await response.json();
-      console.log('Backend connection test:', data);
-      alert('Backend is reachable! Check console for details.');
-    } catch (err) {
-      console.error('Backend connection test failed:', err);
-      alert('Backend connection failed! Check console for details.');
-    }
-  };
-
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -55,7 +42,7 @@ const Register = () => {
       if (response && response.success) {
         console.log('Registration successful! Logging in user...');
         login(response.data);
-        navigate('/');
+        navigate('/how-to-use');
       } else {
         console.error('Registration failed - response not successful');
         setError(response?.error || 'Registration failed. Email may already exist.');
@@ -153,13 +140,6 @@ const Register = () => {
         <p className="auth-switch">
           Already have an account? <Link to="/login">Login here</Link>
         </p>
-        <button 
-          type="button" 
-          onClick={testConnection}
-          style={{ marginTop: '10px', fontSize: '12px', padding: '5px' }}
-        >
-          Test Backend Connection
-        </button>
       </div>
     </div>
   );
