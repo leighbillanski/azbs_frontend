@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getAllItems, claimItem, createGuest, getGuestsByUser } from '../api/api';
 
@@ -16,12 +16,13 @@ const ItemList = () => {
   const [submitting, setSubmitting] = useState(false);
   const { user } = useAuth();
 
-  useEffect(() => {
-    fetchItems();
-    fetchExistingGuests();
-  }, []);
+  // Helper function to get available quantity
+  const getAvailableQuantity = (item) => {
+    const claimedCount = item.claimed_count || 0;
+    return item.item_count - claimedCount;
+  };
 
-  const fetchItems = async () => {
+  const fetchItems = useCallback(async () => {
     try {
       const response = await getAllItems();
       if (response.success) {
@@ -38,9 +39,9 @@ const ItemList = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchExistingGuests = async () => {
+  const fetchExistingGuests = useCallback(async () => {
     try {
       const response = await getGuestsByUser(user.email);
       if (response.success) {
@@ -49,7 +50,12 @@ const ItemList = () => {
     } catch (err) {
       console.error('Error fetching existing guests:', err);
     }
-  };
+  }, [user.email]);
+
+  useEffect(() => {
+    fetchItems();
+    fetchExistingGuests();
+  }, [fetchItems, fetchExistingGuests]);
 
   const handleGuestSelection = (e) => {
     const guestId = e.target.value;
@@ -66,12 +72,6 @@ const ItemList = () => {
     } else {
       setGuestData({ name: '', number: '' });
     }
-  };
-
-  // Helper function to get available quantity
-  const getAvailableQuantity = (item) => {
-    const claimedCount = item.claimed_count || 0;
-    return item.item_count - claimedCount;
   };
 
   const handleCheckboxChange = (itemName, maxQuantity) => {
@@ -261,8 +261,6 @@ const ItemList = () => {
 
   if (loading) return <div className="loading">Loading items...</div>;
 
-  const unclaimedItems = items.filter(item => !item.claimed);
-
   return (
     <div className="screen-container">
       <div className="items-list-header">
@@ -290,14 +288,14 @@ const ItemList = () => {
       )}
 
       <div className="items-list-container">
-        {unclaimedItems.length === 0 ? (
+        {items.length === 0 ? (
           <div className="no-items-message">
             <span className="no-items-icon">🎁</span>
             <p>No unclaimed items available at the moment</p>
           </div>
         ) : (
           <div className="items-list">
-            {unclaimedItems.map((item) => (
+            {items.map((item) => (
               <div 
                 key={item.item_name} 
                 className={`item-list-row ${selectedItems[item.item_name] ? 'selected' : ''}`}
@@ -315,17 +313,6 @@ const ItemList = () => {
                   <h3>{item.item_name}</h3>
                   <div className="item-meta">
                     <span className="item-quantity">Available: {getAvailableQuantity(item)}</span>
-                    {item.item_link && (
-                      <a 
-                        href={item.item_link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="item-link"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        View Details 🔗
-                      </a>
-                    )}
                   </div>
                 </div>
 

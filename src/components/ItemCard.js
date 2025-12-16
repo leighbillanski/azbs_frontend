@@ -13,17 +13,7 @@ const ItemCard = ({ item, onClaim, showClaimButton = true, guestInfo = null }) =
       )}
       <div className="item-details">
         <h3>{item.item_name}</h3>
-        {item.item_link && (
-          <a 
-            href={item.item_link} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="item-link"
-          >
-            View Product
-          </a>
-        )}
-        <p className="item-count">Count: {item.item_count || 0}</p>
+        <p className="item-count">Available: {(item.item_count || 0) - (item.claimed_count || 0)} of {item.item_count || 0}</p>
         {item.claimed && (
           <div className="claimed-badge">
             <span className="badge">Claimed</span>
