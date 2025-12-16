@@ -31,7 +31,13 @@ const ItemList = () => {
           const available = getAvailableQuantity(item);
           return available > 0;
         });
-        setItems(availableItems);
+        
+        // Sort items alphabetically by name
+        const sortedItems = availableItems.sort((a, b) => 
+          a.item_name.localeCompare(b.item_name)
+        );
+        
+        setItems(sortedItems);
       }
     } catch (err) {
       setError('Failed to load items');
