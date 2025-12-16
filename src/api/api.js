@@ -92,6 +92,10 @@ export const updateGuest = async (guestName, guestNumber, updateData) => {
   return await api.put(`/guests/${encodeURIComponent(guestName)}/${encodeURIComponent(guestNumber)}`, updateData);
 };
 
+export const deleteGuest = async (guestName, guestNumber) => {
+  return await api.delete(`/guests/${encodeURIComponent(guestName)}/${encodeURIComponent(guestNumber)}`);
+};
+
 // Item APIs
 export const getAllItems = async () => {
   return await api.get('/items');

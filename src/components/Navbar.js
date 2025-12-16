@@ -107,6 +107,12 @@ const Navbar = () => {
                   <span className="sidebar-icon">📖</span>
                   <span>How to Use</span>
                 </Link>
+                {user?.role?.toLowerCase() === 'admin' && (
+                  <Link to="/admin" className="sidebar-link sidebar-link-admin" onClick={closeSidebar}>
+                    <span className="sidebar-icon">⚙️</span>
+                    <span>Admin Tools</span>
+                  </Link>
+                )}
               </nav>
 
               <div className="sidebar-footer">

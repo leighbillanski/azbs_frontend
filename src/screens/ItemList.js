@@ -311,14 +311,6 @@ const ItemList = () => {
                   />
                 </div>
                 
-                {item.item_photo && (
-                  <img 
-                    src={item.item_photo} 
-                    alt={item.item_name}
-                    className="item-list-thumbnail"
-                  />
-                )}
-                
                 <div className="item-list-info">
                   <h3>{item.item_name}</h3>
                   <div className="item-meta">

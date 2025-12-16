@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { getGuestsByUser, createGuest, updateGuest } from '../api/api';
+import { getGuestsByUser, createGuest, updateGuest, deleteGuest, deleteClaimsByGuest } from '../api/api';
 
 const RSVP = () => {
   const { user } = useAuth();
@@ -16,11 +16,7 @@ const RSVP = () => {
   });
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    fetchGuests();
-  }, []);
-
-  const fetchGuests = async () => {
+  const fetchGuests = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -47,7 +43,11 @@ const RSVP = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user.email]);
+
+  useEffect(() => {
+    fetchGuests();
+  }, [fetchGuests]);
 
   const handleRsvpChange = async (guestName, guestNumber, status) => {
     const key = `${guestName}-${guestNumber}`;
@@ -170,6 +170,43 @@ const RSVP = () => {
     }
   };
 
+  const handleDeleteGuest = async (guestName, guestNumber) => {
+    // Confirm deletion
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete ${guestName}?\n\nThis will also remove all items claimed by this guest. This action cannot be undone.`
+    );
+    
+    if (!confirmDelete) return;
+
+    setError('');
+    setSuccess('');
+
+    try {
+      // First, delete all claims for this guest
+      try {
+        await deleteClaimsByGuest(guestName, guestNumber);
+        console.log('Deleted all claims for guest');
+      } catch (err) {
+        console.log('No claims to delete or error:', err);
+        // Continue even if there are no claims
+      }
+
+      // Then delete the guest
+      const response = await deleteGuest(guestName, guestNumber);
+
+      if (response.success) {
+        setSuccess(`Guest "${guestName}" has been deleted successfully.`);
+        // Refresh guest list
+        fetchGuests();
+      } else {
+        setError(response?.error || 'Failed to delete guest');
+      }
+    } catch (err) {
+      console.error('Error deleting guest:', err);
+      setError(err.response?.data?.error || 'Failed to delete guest. Please try again.');
+    }
+  };
+
   const getInitials = (name) => {
     if (!name) return '?';
     const parts = name.split(' ');
@@ -272,6 +309,15 @@ const RSVP = () => {
                       <span className="radio-label">✕ Not Going</span>
                     </label>
                   </div>
+
+                  <button
+                    className="guest-delete-btn"
+                    onClick={() => handleDeleteGuest(guest.name, guest.number)}
+                    title="Delete guest"
+                    aria-label="Delete guest"
+                  >
+                    🗑️
+                  </button>
                 </div>
               );
             })}
