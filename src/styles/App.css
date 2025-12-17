@@ -1463,7 +1463,7 @@ body {
 
 .admin-actions {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 1rem;
   margin-bottom: 1.5rem;
 }
@@ -1585,6 +1585,76 @@ body {
 .warning-box strong {
   display: block;
   margin-bottom: 0.5rem;
+}
+
+.export-icon-section {
+  text-align: center;
+  padding: 2rem 0;
+  margin-bottom: 2rem;
+}
+
+.export-icon {
+  font-size: 5rem;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.export-icon-section h2 {
+  color: #d81b60;
+  margin: 1rem 0;
+  font-size: 1.75rem;
+}
+
+.export-icon-section p {
+  color: #7f8c8d;
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.btn-export {
+  font-size: 1.25rem;
+  padding: 1rem 2rem;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(255, 107, 157, 0.3);
+}
+
+.btn-export:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(255, 107, 157, 0.4);
+}
+
+.btn-export.btn-secondary {
+  box-shadow: 0 4px 12px rgba(255, 107, 157, 0.2);
+}
+
+.btn-export.btn-secondary:hover {
+  box-shadow: 0 6px 16px rgba(255, 107, 157, 0.3);
+}
+
+.info-banner-admin {
+  background: linear-gradient(135deg, #fff5f8 0%, #ffeef5 100%);
+  border-left: 4px solid #ff6b9d;
+  padding: 1rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.info-banner-admin .info-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.info-banner-admin strong {
+  color: #d81b60;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.info-banner-admin div {
+  color: #666;
+  line-height: 1.6;
 }
 
 /* Items List View Styles */
@@ -2145,6 +2215,28 @@ select.form-input {
     grid-template-columns: 1fr;
   }
 
+  .export-icon {
+    font-size: 3.5rem;
+  }
+
+  .export-icon-section h2 {
+    font-size: 1.5rem;
+  }
+
+  .export-icon-section p {
+    font-size: 1rem;
+  }
+
+  .btn-export {
+    font-size: 1.1rem;
+    padding: 0.85rem 1.5rem;
+    width: 100%;
+  }
+
+  .admin-actions {
+    grid-template-columns: 1fr;
+  }
+
   .items-list-header {
     flex-direction: column;
     align-items: stretch;
@@ -2288,6 +2380,28 @@ select.form-input {
     min-height: 52px;
     padding: 0.75rem 1rem;
     font-size: 1.5rem;
+  }
+
+  /* Export section for small phones */
+  .export-icon {
+    font-size: 3rem;
+  }
+
+  .export-icon-section h2 {
+    font-size: 1.35rem;
+  }
+
+  .export-icon-section p {
+    font-size: 0.95rem;
+  }
+
+  .btn-export {
+    font-size: 1rem;
+    padding: 0.85rem 1.25rem;
+  }
+
+  .admin-actions {
+    gap: 0.75rem;
   }
 }
 
