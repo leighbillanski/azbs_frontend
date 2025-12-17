@@ -1760,19 +1760,72 @@ body {
   white-space: nowrap;
 }
 
+.quantity-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.quantity-btn {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  border: 2px solid #ff6b9d;
+  background: white;
+  color: #ff6b9d;
+  font-size: 1.5rem;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+}
+
+.quantity-btn:hover:not(:disabled) {
+  background: #ff6b9d;
+  color: white;
+  transform: scale(1.05);
+}
+
+.quantity-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.quantity-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  border-color: #ddd;
+  color: #999;
+}
+
+.quantity-btn-minus,
+.quantity-btn-plus {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
 .quantity-input {
-  width: 70px;
+  width: 60px;
   padding: 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
-  font-weight: 600;
+  border: 2px solid #ff6b9d;
+  border-radius: 6px;
+  font-size: 1.125rem;
+  font-weight: 700;
   text-align: center;
+  color: #d81b60;
+  background: #fff5f8;
 }
 
 .quantity-input:focus {
   outline: none;
-  border-color: #ff6b9d;
+  border-color: #d81b60;
 }
 
 .quantity-max {
@@ -2130,10 +2183,36 @@ select.form-input {
     margin-left: 0;
     margin-top: 1rem;
     justify-content: space-between;
+    padding: 0.75rem 1rem;
+    flex-wrap: wrap;
+  }
+
+  .quantity-controls {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+  }
+
+  .quantity-btn {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    min-height: 48px;
+    font-size: 1.75rem;
   }
 
   .quantity-input {
-    width: 60px;
+    width: 70px;
+    font-size: 1.25rem;
+    padding: 0.75rem;
+  }
+
+  .quantity-max {
+    width: 100%;
+    text-align: center;
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
   }
 }
 
@@ -2164,6 +2243,51 @@ select.form-input {
 
   .sidebar-user-name {
     font-size: 1rem;
+  }
+
+  /* Even larger quantity controls for small phones */
+  .quantity-btn {
+    width: 52px;
+    height: 52px;
+    min-width: 52px;
+    min-height: 52px;
+    font-size: 2rem;
+  }
+
+  .quantity-input {
+    width: 80px;
+    font-size: 1.5rem;
+    padding: 0.75rem 0.5rem;
+  }
+
+  .quantity-selector {
+    padding: 1rem;
+  }
+
+  .quantity-selector label {
+    font-size: 1rem;
+  }
+
+  /* Claimed items quantity controls for small phones */
+  .claim-quantity-controls .quantity-btn {
+    width: 52px;
+    height: 52px;
+    min-width: 52px;
+    min-height: 52px;
+    font-size: 2rem;
+  }
+
+  .claim-quantity-input {
+    width: 80px;
+    font-size: 1.5rem;
+    padding: 0.75rem 0.5rem;
+  }
+
+  .btn-icon {
+    min-width: 52px;
+    min-height: 52px;
+    padding: 0.75rem 1rem;
+    font-size: 1.5rem;
   }
 }
 
@@ -2304,22 +2428,43 @@ select.form-input {
 .claim-edit-controls {
   display: flex;
   align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.claim-quantity-controls {
+  display: flex;
+  align-items: center;
   gap: 0.5rem;
 }
 
 .claim-quantity-input {
   width: 60px;
-  padding: 0.25rem 0.5rem;
+  padding: 0.5rem;
   border: 2px solid #ff6b9d;
-  border-radius: 4px;
-  font-size: 0.9rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 700;
   text-align: center;
+  color: #d81b60;
+  background: #fff5f8;
+}
+
+.claim-quantity-input:focus {
+  outline: none;
+  border-color: #d81b60;
 }
 
 .claim-max-hint {
   color: #7f8c8d;
-  font-size: 0.85rem;
-  font-weight: 500;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.claim-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .btn-icon {
@@ -3238,10 +3383,52 @@ select.form-input {
     width: 100%;
   }
 
-  .claim-actions,
-  .claim-edit-controls {
+  .claim-actions {
     width: 100%;
     justify-content: space-between;
+  }
+
+  .claim-edit-controls {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+
+  .claim-quantity-controls {
+    justify-content: center;
+    gap: 0.75rem;
+  }
+
+  .claim-quantity-controls .quantity-btn {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    min-height: 48px;
+    font-size: 1.75rem;
+  }
+
+  .claim-quantity-input {
+    width: 70px;
+    font-size: 1.25rem;
+    padding: 0.75rem;
+  }
+
+  .claim-max-hint {
+    text-align: center;
+    font-size: 1rem;
+  }
+
+  .claim-action-buttons {
+    justify-content: center;
+    gap: 1rem;
+  }
+
+  .btn-icon {
+    min-width: 48px;
+    min-height: 48px;
+    padding: 0.75rem 1rem;
+    font-size: 1.25rem;
   }
 
   .claim-quantity {

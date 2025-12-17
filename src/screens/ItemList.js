@@ -325,16 +325,45 @@ const ItemList = () => {
                 {selectedItems[item.item_name] && (
                   <div className="quantity-selector">
                     <label htmlFor={`qty-${item.item_name}`}>Quantity:</label>
-                    <input
-                      id={`qty-${item.item_name}`}
-                      type="number"
-                      min="1"
-                      max={getAvailableQuantity(item)}
-                      value={selectedItems[item.item_name]}
-                      onChange={(e) => handleQuantityChange(item.item_name, e.target.value, getAvailableQuantity(item))}
-                      className="quantity-input"
-                      onClick={(e) => e.stopPropagation()}
-                    />
+                    <div className="quantity-controls">
+                      <button
+                        type="button"
+                        className="quantity-btn quantity-btn-minus"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const newQty = Math.max(1, selectedItems[item.item_name] - 1);
+                          handleQuantityChange(item.item_name, newQty, getAvailableQuantity(item));
+                        }}
+                        disabled={selectedItems[item.item_name] <= 1}
+                        aria-label="Decrease quantity"
+                      >
+                        −
+                      </button>
+                      <input
+                        id={`qty-${item.item_name}`}
+                        type="number"
+                        min="1"
+                        max={getAvailableQuantity(item)}
+                        value={selectedItems[item.item_name]}
+                        onChange={(e) => handleQuantityChange(item.item_name, e.target.value, getAvailableQuantity(item))}
+                        className="quantity-input"
+                        onClick={(e) => e.stopPropagation()}
+                        readOnly
+                      />
+                      <button
+                        type="button"
+                        className="quantity-btn quantity-btn-plus"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const newQty = Math.min(getAvailableQuantity(item), selectedItems[item.item_name] + 1);
+                          handleQuantityChange(item.item_name, newQty, getAvailableQuantity(item));
+                        }}
+                        disabled={selectedItems[item.item_name] >= getAvailableQuantity(item)}
+                        aria-label="Increase quantity"
+                      >
+                        +
+                      </button>
+                    </div>
                     <span className="quantity-max">of {getAvailableQuantity(item)}</span>
                   </div>
                 )}

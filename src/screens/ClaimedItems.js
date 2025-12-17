@@ -270,32 +270,55 @@ const ClaimedItems = () => {
                           
                           {isEditing ? (
                             <div className="claim-edit-controls">
-                              <input
-                                type="number"
-                                min="1"
-                                max={editingClaim.maxAvailable}
-                                value={newQuantity}
-                                onChange={(e) => setNewQuantity(parseInt(e.target.value) || 1)}
-                                className="claim-quantity-input"
-                                title={`Max available: ${editingClaim.maxAvailable}`}
-                              />
+                              <div className="claim-quantity-controls">
+                                <button
+                                  type="button"
+                                  className="quantity-btn quantity-btn-minus"
+                                  onClick={() => setNewQuantity(Math.max(1, newQuantity - 1))}
+                                  disabled={newQuantity <= 1 || updating}
+                                  aria-label="Decrease quantity"
+                                >
+                                  −
+                                </button>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  max={editingClaim.maxAvailable}
+                                  value={newQuantity}
+                                  onChange={(e) => setNewQuantity(parseInt(e.target.value) || 1)}
+                                  className="claim-quantity-input"
+                                  title={`Max available: ${editingClaim.maxAvailable}`}
+                                  readOnly
+                                />
+                                <button
+                                  type="button"
+                                  className="quantity-btn quantity-btn-plus"
+                                  onClick={() => setNewQuantity(Math.min(editingClaim.maxAvailable, newQuantity + 1))}
+                                  disabled={newQuantity >= editingClaim.maxAvailable || updating}
+                                  aria-label="Increase quantity"
+                                >
+                                  +
+                                </button>
+                              </div>
                               <span className="claim-max-hint">/ {editingClaim.maxAvailable}</span>
-                              <button
-                                onClick={handleSaveQuantity}
-                                className="btn-icon btn-save"
-                                title="Save"
-                                disabled={updating}
-                              >
-                                {updating ? '⏳' : '✓'}
-                              </button>
-                              <button
-                                onClick={handleCancelEdit}
-                                className="btn-icon btn-cancel"
-                                title="Cancel"
-                                disabled={updating}
-                              >
-                                ✕
-                              </button>
+                              <div className="claim-action-buttons">
+                                <button
+                                  onClick={handleSaveQuantity}
+                                  className="btn-icon btn-save"
+                                  title="Save"
+                                  disabled={updating}
+                                >
+                                  {updating ? '⏳' : '✓'}
+                                </button>
+                                <button
+                                  onClick={handleCancelEdit}
+                                  className="btn-icon btn-cancel"
+                                  title="Cancel"
+                                  disabled={updating}
+                                >
+                                  ✕
+                                </button>
+                              </div>
                             </div>
                           ) : (
                             <div className="claim-actions">
